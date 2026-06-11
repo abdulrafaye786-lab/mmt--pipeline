@@ -1,0 +1,864 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMT Talent Pipeline - Member Directory & Analytics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .heading-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2563eb;
+        }
+        /* Premium Shadows & Soft Glows */
+        .blue-glow {
+            box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.08);
+        }
+        .glow-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(37, 99, 235, 0.08);
+            box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.12);
+        }
+        .glow-card:hover {
+            border-color: rgba(37, 99, 235, 0.25);
+            box-shadow: 0 12px 25px -4px rgba(37, 99, 235, 0.15);
+            transform: translateY(-2px);
+        }
+        .modal-bg {
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+        }
+        .chart-container {
+            position: relative;
+            height: 240px;
+            width: 100%;
+        }
+        .ar-grid {
+            background-image: radial-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        
+        /* 3D Visiting Card Physics Styles */
+        .card-perspective {
+            perspective: 1200px;
+        }
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
+            background: #ffffff;
+            position: relative;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+        }
+        .preserve-3d-elements {
+            transform: translateZ(50px);
+        }
+        .card-chip {
+            background: linear-gradient(135deg, #ffd700 0%, #f59e0b 50%, #d97706 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        /* Highlighting Search Bar Animations */
+        @keyframes pulse-border {
+            0%, 100% {
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 10px 25px -5px rgba(37, 99, 235, 0.1);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.35), 0 15px 30px 2px rgba(37, 99, 235, 0.2);
+            }
+        }
+        .search-highlight {
+            animation: pulse-border 3s infinite;
+            border: 2.5px solid #2563eb !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24 transition-all duration-300">
+
+    <!-- TOP NAVIGATION BAR -->
+    <nav class="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <!-- MMT Corporate Logo Monogram -->
+                    <div class="w-10 h-10 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
+                        <span class="heading-font font-black tracking-tighter text-base">MMT</span>
+                    </div>
+                    <div>
+                        <span class="heading-font font-bold text-base tracking-widest text-slate-900">MMT TALENT</span>
+                        <span class="block text-[9px] text-blue-600 font-bold uppercase tracking-widest">Pipeline Portal</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="openSyncModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-blue-200 bg-blue-50/50 text-blue-600 hover:bg-blue-100/50 transition-all duration-300 shadow-sm">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                        <span>Sync Menu</span>
+                    </button>
+                    <div id="syncStatusBadge" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span>
+                        <span id="syncStatusText">Connecting to Live Sheet...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION: MMT TALENT PIPELINE INTRO -->
+    <header class="relative overflow-hidden border-b border-slate-200/80 bg-gradient-to-b from-white via-slate-50 to-white py-16 md:py-24 ar-grid">
+        <div class="absolute -right-32 -top-32 w-96 h-96 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+        <div class="absolute -left-32 -bottom-32 w-96 h-96 bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center text-center">
+            
+            <!-- Logo Symbol -->
+            <div class="mb-6 relative group">
+                <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 opacity-10 blur-xl group-hover:opacity-25 transition duration-1000"></div>
+                <div class="relative bg-white p-6 rounded-full border border-blue-100 flex items-center justify-center shadow-md">
+                    <svg class="w-20 h-20 text-blue-600 drop-shadow-[0_0_15px_rgba(37,99,235,0.2)] animate-pulse" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Abstract connected pipeline / graph growth structure -->
+                        <path d="M15 75 L38 32 Q45 20 52 32 L75 75" stroke="url(#arGradient)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="15" cy="75" r="7" fill="#2563eb" />
+                        <circle cx="38" cy="32" r="7" fill="#4f46e5" />
+                        <circle cx="75" cy="75" r="7" fill="#06b6d4" />
+                        <path d="M38 32 L75 32 Q85 32 85 45 L85 75" stroke="url(#arGradient)" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 6"/>
+                        <circle cx="85" cy="75" r="5" fill="#f43f5e" />
+                        <defs>
+                            <linearGradient id="arGradient" x1="15" y1="32" x2="85" y2="75" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#2563eb" />
+                                <stop offset="0.5" stop-color="#4f46e5" />
+                                <stop offset="1" stop-color="#06b6d4" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Logo Headline & Text -->
+            <h1 class="heading-font text-4xl sm:text-6xl font-black tracking-tight text-slate-900 mb-2">
+                MMT <span class="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">TALENT PIPELINE</span>
+            </h1>
+            <p class="text-xs sm:text-sm text-blue-600 uppercase tracking-[0.4em] font-bold mb-5">
+                Helping People Succeed & Connect
+            </p>
+            <div class="max-w-2xl bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm mb-6">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100 mb-2">
+                    <i data-lucide="heart" class="w-3.5 h-3.5 fill-current"></i> Our Core Mission
+                </span>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    The MMT Talent Pipeline is designed to help, nurture, and empower individuals. We bring together talented students and skilled professionals, helping them collaborate, share bio portfolios, and match with the ultimate career opportunities completely free.
+                </p>
+            </div>
+
+            <!-- Scroll Indicator -->
+            <div class="mt-8 animate-bounce text-blue-500/70 flex flex-col items-center gap-1">
+                <span class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Scroll to explore</span>
+                <i data-lucide="chevrons-down" class="w-4 h-4 text-blue-600"></i>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD COMPONENT -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 space-y-16">
+        
+        <!-- SECTION 1: LIVE CHART GRAPH PANEL -->
+        <section class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+                <div>
+                    <h2 class="heading-font text-xl font-bold text-slate-950 tracking-wider uppercase">Pipeline Analytics Suite</h2>
+                    <p class="text-xs text-slate-500">Real-time demographic breakdowns of our connected talent network.</p>
+                </div>
+            </div>
+
+            <!-- Scorecards Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glow-card p-4 rounded-xl flex items-center justify-between transition-all duration-300">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Registered</span>
+                        <span id="totalMembersVal" class="heading-font text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+                    </div>
+                    <div class="p-2.5 bg-blue-50 border border-blue-100 text-blue-600 rounded-lg">
+                        <i data-lucide="users" class="w-4.5 h-4.5"></i>
+                    </div>
+                </div>
+
+                <div class="glow-card p-4 rounded-xl flex items-center justify-between transition-all duration-300">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Active Students</span>
+                        <span id="totalStudentsVal" class="heading-font text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+                    </div>
+                    <div class="p-2.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-lg">
+                        <i data-lucide="graduation-cap" class="w-4.5 h-4.5"></i>
+                    </div>
+                </div>
+
+                <div class="glow-card p-4 rounded-xl flex items-center justify-between transition-all duration-300">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Professionals</span>
+                        <span id="totalProfessionalsVal" class="heading-font text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+                    </div>
+                    <div class="p-2.5 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-lg">
+                        <i data-lucide="briefcase" class="w-4.5 h-4.5"></i>
+                    </div>
+                </div>
+
+                <div class="glow-card p-4 rounded-xl flex items-center justify-between transition-all duration-300">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">LinkedIn Synced</span>
+                        <span id="totalLinkedInVal" class="heading-font text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+                    </div>
+                    <div class="p-2.5 bg-cyan-50 border border-cyan-100 text-cyan-600 rounded-lg">
+                        <i data-lucide="linkedin" class="w-4.5 h-4.5"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Graphical Plots -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Chart 1: Role Doughnut -->
+                <div class="bg-white border border-slate-200/80 p-5 rounded-2xl relative shadow-sm blue-glow">
+                    <div class="flex items-center gap-1.5 mb-4">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+                        <h3 class="heading-font text-slate-900 font-bold text-xs uppercase tracking-wider">Role Breakdown</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="roleChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Gender Demographics -->
+                <div class="bg-white border border-slate-200/80 p-5 rounded-2xl relative shadow-sm blue-glow">
+                    <div class="flex items-center gap-1.5 mb-4">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-600"></i>
+                        <h3 class="heading-font text-slate-900 font-bold text-xs uppercase tracking-wider">Gender Demographics</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: LinkedIn Connections -->
+                <div class="bg-white border border-slate-200/80 p-5 rounded-2xl relative shadow-sm blue-glow">
+                    <div class="flex items-center gap-1.5 mb-4">
+                        <i data-lucide="linkedin" class="w-4 h-4 text-cyan-600"></i>
+                        <h3 class="heading-font text-slate-900 font-bold text-xs uppercase tracking-wider">LinkedIn Connectivity</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="linkedinChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 2: COMPREHENSIVE WORKSPACE DIRECTORY -->
+        <section class="space-y-8 pt-6">
+            
+            <!-- Highly Highlighted Centered Search Panel -->
+            <div class="max-w-xl mx-auto flex flex-col items-center justify-center text-center space-y-4">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">
+                    <span class="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span> Live Database Directory
+                </span>
+                <h3 class="heading-font text-2xl font-black text-slate-900 tracking-tight">WHO IS IN THE PIPELINE?</h3>
+                <p class="text-xs text-slate-500 max-w-sm">Use our high-visibility search bar below to filter and locate any talent profile instantly.</p>
+                
+                <!-- The Pulsing Highly Visible Search Input -->
+                <div class="w-full relative px-2">
+                    <div class="relative rounded-2xl search-highlight transition-all duration-300">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center">
+                            <i data-lucide="search" class="w-5 h-5 text-blue-600"></i>
+                        </span>
+                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Type a name, skill, or career role here..." 
+                               class="w-full bg-white rounded-xl py-3.5 pl-12 pr-4 text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live List Database Cards Grid (Displays 3D Visiting Cards) -->
+            <div id="directoryGrid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 pt-4 card-perspective">
+                <!-- Dynamic 3D Person Cards populated via JS -->
+            </div>
+
+            <!-- Empty Directory Search Result View -->
+            <div id="emptyDirectoryState" class="hidden glow-card rounded-2xl p-12 text-center flex flex-col items-center bg-white">
+                <div class="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-3 animate-pulse">
+                    <i data-lucide="help-circle" class="w-6 h-6"></i>
+                </div>
+                <h4 class="heading-font font-bold text-slate-900">No Candidates Found</h4>
+                <p class="text-xs text-slate-500 max-w-sm mt-1">
+                    Try entering different search terms. All phone numbers and direct contact variables are locked.
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- SETTINGS & LIVE SYNC CONFIGURATION MODAL -->
+    <div id="syncModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg hidden">
+        <div class="bg-white border border-slate-200 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
+            
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 bg-blue-50 border border-blue-100 rounded-xl text-blue-600">
+                        <i data-lucide="database" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="heading-font text-slate-900 font-bold text-lg">Talent Pipeline Sync Menu</h3>
+                        <p class="text-xs text-slate-500">Configure cloud link or drop local offline data</p>
+                    </div>
+                </div>
+                <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-50 transition-all">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <!-- OPTION A: OFFLINE LOCAL CSV UPLOAD (Bypasses CORS Browser Blocks completely!) -->
+                <div class="space-y-2">
+                    <span class="text-xs font-extrabold text-blue-600 uppercase tracking-widest block">Option 1: Drag & Drop CSV File (Local Offline)</span>
+                    <div class="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-5 text-center cursor-pointer transition-all duration-300 bg-slate-50/50 hover:bg-blue-50/10" id="dropZone" onclick="document.getElementById('csvFileInput').click()">
+                        <i data-lucide="upload-cloud" class="w-8 h-8 text-blue-500 mx-auto mb-2"></i>
+                        <span class="text-xs font-bold text-slate-700 block">Drop your Google Forms responses CSV file here</span>
+                        <span class="text-[10px] text-slate-400 block mt-1">Or click to select your downloaded CSV file</span>
+                        <input type="file" id="csvFileInput" class="hidden" accept=".csv" onchange="handleLocalFileUpload(event)">
+                    </div>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-slate-100"></div>
+                    <span class="flex-shrink mx-4 text-[10px] font-bold uppercase text-slate-400">OR</span>
+                    <div class="flex-grow border-t border-slate-100"></div>
+                </div>
+
+                <!-- OPTION B: LIVE CLOUD SYNC -->
+                <div class="space-y-3">
+                    <span class="text-xs font-extrabold text-blue-600 uppercase tracking-widest block">Option 2: Live Google Sheets Sync (Cloud Only)</span>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        To fetch data live directly without file uploads, publish your sheet to the web and paste the link below:
+                    </p>
+                    <div class="bg-slate-50 border border-slate-100 p-3.5 rounded-xl space-y-1.5">
+                        <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">How to publish:</span>
+                        <ol class="list-decimal list-inside text-[10px] text-slate-600 space-y-0.5 leading-relaxed">
+                            <li>In your response Sheet, click <span class="text-slate-900 font-semibold">File ➡️ Share ➡️ Publish to web</span>.</li>
+                            <li>Select your response tab and set output to <span class="text-slate-900 font-semibold">Comma-separated values (.csv)</span>.</li>
+                            <li>Copy and paste that URL into the input field below:</li>
+                        </ol>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-bold text-slate-700">Google Sheet published CSV Link:</label>
+                        <input type="url" id="sheetsCsvUrlInput" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv" 
+                               class="w-full bg-white border border-slate-200 focus:border-blue-500 rounded-xl py-2 px-4 text-xs text-slate-950 placeholder-slate-400 outline-none transition-all duration-300">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center gap-3">
+                <button onclick="resetToFallback()" class="text-xs font-semibold text-slate-400 hover:text-slate-600 underline">
+                    Reset to Default Cloud URL
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeSyncModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-600 bg-transparent hover:bg-slate-100 rounded-xl transition-all">
+                        Cancel
+                    </button>
+                    <button onclick="saveAndSyncData()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md">
+                        Save and Live Sync
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- INTERNAL CONTROLLER SCRIPT -->
+    <script>
+        // Default Google Sheet Published CSV Link provided by user
+        const defaultLiveSyncURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQllGe6Tcj7I8_zG9JV8ySEbTVfFbXp2cXG07fY2UbsG7HMIu4NdFGlJ7WWgx1zk31_ovcrJE9jHQHz/pub?output=csv";
+
+        // Raw backup initial dataset loaded securely
+        const rawFallbackCSV = `Timestamp,Email Address,Full Name ,Gender,Contact No,Role,Job Title,Linkedin Profile,Professional Smmary,How did you hear about us ?\n6/8/2026 14:22:03,sharjeelfarrukh5523@gmail.com,Sharjeel Farrukh,male,+923357654162,Profesional,Data Analyst,https://www.linkedin.com/in/sharjeel-farrukh-b60367180/,"I am Sharjeel a Results-driven Data Analyst with 3+ years of experience in transforming complex datasets into meaningful insights.",Sir Mudassar Sb\n6/8/2026 14:29:35,hadiaharis815@gmail.com,HADIA HARIS,Female,03174464485,Student,Student in A levels,No LinkedIn profile,"I am a student of A levels studying math psychology and English.",Sir Mudassar Sb\n6/8/2026 14:32:44,ayanimran112233445567@gmail.com,Ayan Imran,male,03266145702,Student,Student,No,,\n6/8/2026 18:50:39,fouziaimran229@gmail.com,Fouzia Imran,Female,03214343229,Student,Student,,,,Sir Mudassar Sb\n6/8/2026 18:53:23,khadijaathar559@gmail.com,Khadija Athar,Female,,Student,Student,,,,Sir Mudassar Sb\n6/8/2026 18:53:53,emanshahzad135@gmail.com,Eman Shahzad ,Female,03244460125,Student,CS Student UCP,Eman Shahzad,"BSCS final year student working in game development and 3D graphic design.",Sir Mudassar Sb\n6/8/2026 22:45:06,abdulrafaye786@gmail.com,Abdul rafaye Gondal,male,03289435373,Student,No job,https://www.linkedin.com/in/abdul-rafaye786,Matric student interested in exploring AI,Sir Mudassar Sb\n6/8/2026 23:26:08,alimehdi8538@gmail.com,Ali Mehdi,male,03364177579,Student,No job,https://www.linkedin.com/in/syedalimehdi,Ready to grow my skills and knowledge.,Sir Mudassar Sb`;
+
+        // Global State variables
+        let database = [];
+        let filteredDatabase = [];
+
+        // Chart References
+        let roleChartInstance = null;
+        let genderChartInstance = null;
+        let linkedinChartInstance = null;
+
+        window.onload = function() {
+            lucide.createIcons();
+            initCharts();
+
+            // Set up Drag and Drop Handlers
+            setupDragAndDrop();
+
+            // Load from user's custom saved endpoint or fall back to their default live URL
+            const savedUrl = localStorage.getItem('google_sheet_csv_sync_endpoint') || defaultLiveSyncURL;
+            document.getElementById('sheetsCsvUrlInput').value = savedUrl;
+            fetchCustomSheetData(savedUrl);
+        }
+
+        // Setup Drag & Drop offline uploader
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('border-blue-500', 'bg-blue-50/20');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('border-blue-500', 'bg-blue-50/20');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    processLocalCSVFile(files[0]);
+                }
+            }, false);
+        }
+
+        // Handle File input selections
+        function handleLocalFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processLocalCSVFile(file);
+            }
+        }
+
+        // Offline FileReader loader
+        function processLocalCSVFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                parseCSV(text);
+                
+                const badge = document.getElementById('syncStatusBadge');
+                const statusText = document.getElementById('syncStatusText');
+                badge.className = "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold bg-blue-500 text-white border border-blue-600";
+                statusText.innerText = "Offline File Active";
+                
+                closeSyncModal();
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialize Chart.js with high-vibrancy colorful light-themed configurations
+        function initCharts() {
+            const ctxRole = document.getElementById('roleChart').getContext('2d');
+            
+            // Highly Colorful Solid & Gradient Layout for Light Mode
+            roleChartInstance = new Chart(ctxRole, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Students', 'Professionals'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#2563eb', '#10b981'], // Vibrant Royal Blue vs Clear Emerald
+                        borderColor: ['#ffffff', '#ffffff'],
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { labels: { color: '#334155', font: { family: 'Plus Jakarta Sans', size: 11, weight: 'bold' } } } 
+                    }
+                }
+            });
+
+            const ctxGender = document.getElementById('genderChart').getContext('2d');
+            genderChartInstance = new Chart(ctxGender, {
+                type: 'bar',
+                data: {
+                    labels: ['Male', 'Female', 'Unspecified'],
+                    datasets: [{
+                        label: 'Member Count',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#8b5cf6', '#ec4899', '#64748b'], // Vibrant Violet vs Pink vs Warm Slate
+                        borderColor: ['#7c3aed', '#db2777', '#475569'],
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#475569', stepSize: 1 }, grid: { color: 'rgba(148, 163, 184, 0.15)' } },
+                        x: { ticks: { color: '#475569' }, grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const ctxLinkedin = document.getElementById('linkedinChart').getContext('2d');
+            linkedinChartInstance = new Chart(ctxLinkedin, {
+                type: 'doughnut',
+                data: {
+                    labels: ['LinkedIn Verified', 'No Profile'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#06b6d4', '#f43f5e'], // Cyan vs Warm Coral/Rose
+                        borderColor: ['#ffffff', '#ffffff'],
+                        borderWidth: 3,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#334155', font: { family: 'Plus Jakarta Sans', size: 11, weight: 'bold' } } } }
+                }
+            });
+        }
+
+        // Bulletproof CSV parsing algorithm that handles multi-line fields and complex quotes
+        function parseCSV(text) {
+            let lines = [];
+            let row = [""];
+            let inQuotes = false;
+            
+            // Normalize all carriage returns to basic newline
+            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                let nextChar = text[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        row[row.length - 1] += '"';
+                        i++; // Skip escape quote
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    row.push("");
+                } else if (char === '\n' && !inQuotes) {
+                    lines.push(row);
+                    row = [""];
+                } else {
+                    row[row.length - 1] += char;
+                }
+            }
+            if (row.length > 1 || row[0] !== "") {
+                lines.push(row);
+            }
+            
+            if (lines.length < 2) return;
+
+            const headers = lines[0].map(h => h.trim());
+            database = lines.slice(1).map((rowArr) => {
+                let obj = {};
+                const findIndex = (patterns) => headers.findIndex(h => patterns.some(p => h.toLowerCase().trim().includes(p)));
+                
+                const nameIdx = findIndex(['full name', 'name']);
+                const genderIdx = findIndex(['gender']);
+                const roleIdx = findIndex(['role', 'designation']);
+                const linkedinIdx = findIndex(['linkedin']);
+                const jobIdx = findIndex(['job title', 'job', 'focus', 'occupation']);
+                const summaryIdx = findIndex(['summary', 'smmary', 'bio', 'description']);
+                const sourceIdx = findIndex(['hear about us', 'source', 'reference']);
+
+                obj.name = nameIdx !== -1 && rowArr[nameIdx] ? rowArr[nameIdx].trim() : 'Anonymous';
+                obj.gender = genderIdx !== -1 && rowArr[genderIdx] ? rowArr[genderIdx].trim() : 'Unspecified';
+                obj.role = roleIdx !== -1 && rowArr[roleIdx] ? rowArr[roleIdx].trim() : 'Student';
+                obj.linkedin = linkedinIdx !== -1 && rowArr[linkedinIdx] ? rowArr[linkedinIdx].trim() : '';
+                obj.job = jobIdx !== -1 && rowArr[jobIdx] ? rowArr[jobIdx].trim() : 'Workspace Member';
+                obj.summary = summaryIdx !== -1 && rowArr[summaryIdx] ? rowArr[summaryIdx].trim() : 'This member has not written a summary yet.';
+                obj.source = sourceIdx !== -1 && rowArr[sourceIdx] ? rowArr[sourceIdx].trim() : 'Community Registry';
+                return obj;
+            }).filter(item => item.name && item.name.toLowerCase() !== 'anonymous' && item.name !== '');
+
+            applyFilters();
+        }
+
+        // Apply real-time query filter to Workspace Directory cards
+        function applyFilters() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            filteredDatabase = database.filter(item => {
+                const name = item.name.toLowerCase();
+                const job = item.job.toLowerCase();
+                const summary = item.summary.toLowerCase();
+                const role = item.role.toLowerCase();
+
+                return query === "" || name.includes(query) || job.includes(query) || summary.includes(query) || role.includes(query);
+            });
+
+            updateDashboard();
+        }
+
+        // Fetch Live Database directly from published Google Sheet CSV URL
+        async function fetchCustomSheetData(url) {
+            const badge = document.getElementById('syncStatusBadge');
+            const statusText = document.getElementById('syncStatusText');
+            badge.className = "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200";
+            statusText.innerText = "Syncing with Live Sheet...";
+            
+            try {
+                // CACHE BUSTER: Append unique timestamp to bypass any browser or cloud CDN caching
+                const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                
+                const response = await fetch(cacheBusterUrl, { cache: "no-store" });
+                if (!response.ok) throw new Error();
+                parseCSV(await response.text());
+                
+                badge.className = "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
+                statusText.innerText = "Live Cloud Synced";
+            } catch (err) {
+                console.warn("Live fetch failed due to local file security browser policies. Reverting to fallback dataset.");
+                badge.className = "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200";
+                statusText.innerText = "Local Fallback Active";
+                parseCSV(rawFallbackCSV);
+            }
+        }
+
+        // Render full dashboard UI, scorecards, charts, and detailed directory list cards
+        function updateDashboard() {
+            renderMetrics();
+            updateChartsData();
+            renderDirectoryCards();
+        }
+
+        // Render top analytics metrics
+        function renderMetrics() {
+            document.getElementById('totalMembersVal').innerText = database.length;
+            const students = database.filter(item => item.role.toLowerCase().includes('student')).length;
+            const pros = database.filter(item => item.role.toLowerCase().includes('profesional') || item.role.toLowerCase().includes('professional')).length;
+            const linkedIn = database.filter(item => item.linkedin && item.linkedin.toLowerCase().includes('http')).length;
+
+            document.getElementById('totalStudentsVal').innerText = students;
+            document.getElementById('totalProfessionalsVal').innerText = pros;
+            document.getElementById('totalLinkedInVal').innerText = linkedIn;
+        }
+
+        // Re-compute Chart.js graphs
+        function updateChartsData() {
+            if (!roleChartInstance || !genderChartInstance || !linkedinChartInstance) return;
+
+            let students = database.filter(item => item.role.toLowerCase().includes('student')).length;
+            let pros = database.filter(item => item.role.toLowerCase().includes('profesional') || item.role.toLowerCase().includes('professional')).length;
+            let linkedIn = database.filter(item => item.linkedin && item.linkedin.toLowerCase().includes('http')).length;
+
+            let maleCount = 0, femaleCount = 0, unspecifiedCount = 0;
+            database.forEach(item => {
+                const gen = item.gender.toLowerCase().trim();
+                if (gen === 'male' || gen === 'm' || gen.startsWith('ma')) maleCount++;
+                else if (gen === 'female' || gen === 'f' || gen.startsWith('fe')) femaleCount++;
+                else unspecifiedCount++;
+            });
+
+            roleChartInstance.data.datasets[0].data = [students, pros];
+            roleChartInstance.update();
+
+            genderChartInstance.data.datasets[0].data = [maleCount, femaleCount, unspecifiedCount];
+            genderChartInstance.update();
+
+            linkedinChartInstance.data.datasets[0].data = [linkedIn, database.length - linkedIn];
+            linkedinChartInstance.update();
+        }
+
+        // Render gorgeous, high-contrast, professional cards with realistic interactive 3D physics
+        function renderDirectoryCards() {
+            const grid = document.getElementById('directoryGrid');
+            const emptyState = document.getElementById('emptyDirectoryState');
+            grid.innerHTML = '';
+
+            if (filteredDatabase.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            filteredDatabase.forEach((member, cardIndex) => {
+                const initial = member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                const isProfessional = member.role.toLowerCase().includes('profesional') || member.role.toLowerCase().includes('professional');
+                const hasLinkedin = member.linkedin && member.linkedin.toLowerCase().includes('http');
+
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = "card-perspective h-[310px] w-full cursor-pointer";
+                
+                // Redesigned asymmetric, highly legible multitone executive 3D Visiting Card
+                cardWrapper.innerHTML = `
+                    <div id="visitingCard-${cardIndex}" class="card-3d w-full h-full rounded-2xl flex flex-row shadow-lg border border-slate-200"
+                         onmousemove="handleCardTilt(event, ${cardIndex})"
+                         onmouseleave="resetCardTilt(${cardIndex})">
+                        
+                        <!-- Left Midnight Sidebar (Multitone Area A) -->
+                        <div class="w-[100px] bg-slate-950 flex flex-col justify-between items-center py-5 border-r border-slate-900 shrink-0">
+                            <!-- Initials Avatar Badge -->
+                            <div class="w-12 h-12 bg-white/10 backdrop-blur border border-white/20 text-white rounded-xl flex items-center justify-center font-black text-sm heading-font shadow-md preserve-3d-elements">
+                                ${initial}
+                            </div>
+                            
+                            <!-- Premium Gold security microchip layout -->
+                            <div class="w-9 h-6 rounded-md card-chip border border-yellow-300/50 flex flex-col gap-0.5 p-1 justify-center relative overflow-hidden preserve-3d-elements">
+                                <div class="border-b border-yellow-700/40 w-full h-0.5"></div>
+                                <div class="border-b border-yellow-700/40 w-full h-0.5"></div>
+                                <div class="absolute inset-y-0 left-1/2 w-0.5 bg-yellow-700/40"></div>
+                            </div>
+                            
+                            <!-- Logo Brand Stamp -->
+                            <span class="text-[9px] heading-font font-black tracking-widest text-slate-400 rotate-270 uppercase preserve-3d-elements">
+                                MMT CORE
+                            </span>
+                        </div>
+
+                        <!-- Right Pure White Linen Body (Multitone Area B) -->
+                        <div class="flex-1 bg-white p-5 flex flex-col justify-between overflow-hidden">
+                            
+                            <!-- Name & Position Header Block -->
+                            <div class="space-y-1.5 preserve-3d-elements">
+                                <div class="flex items-start justify-between gap-1">
+                                    <h4 class="text-base font-black text-slate-900 tracking-tight leading-tight uppercase line-clamp-1">
+                                        ${member.name}
+                                    </h4>
+                                    
+                                    <!-- Simple Gender Indicator icon representation -->
+                                    <span class="text-xs shrink-0 font-bold ${member.gender.toLowerCase().startsWith('fe') ? 'text-pink-500' : 'text-blue-500'}">
+                                        ${member.gender.toLowerCase().startsWith('fe') ? '♀' : '♂'}
+                                    </span>
+                                </div>
+                                
+                                <div class="flex items-center gap-1.5">
+                                    <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${isProfessional ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}">
+                                        ${isProfessional ? 'PROFESSIONAL' : 'STUDENT'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Clear Focus / Work details block -->
+                            <div class="border-t border-slate-100 pt-3 flex-1 flex flex-col justify-center preserve-3d-elements">
+                                <span class="text-[8px] font-black text-blue-600 uppercase tracking-widest block mb-0.5">Designation focus</span>
+                                <p class="text-xs text-slate-800 font-bold leading-snug line-clamp-1 mb-1">${member.job}</p>
+                                
+                                <p class="text-[11px] text-slate-600 leading-relaxed line-clamp-3 bg-slate-50 p-2 rounded-lg border border-slate-100 italic">
+                                    "${member.summary}"
+                                </p>
+                            </div>
+
+                            <!-- Card Footer metadata & Sync Action button -->
+                            <div class="border-t border-slate-100 pt-3 flex items-center justify-between mt-auto preserve-3d-elements">
+                                <div class="text-left">
+                                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Reference Acquisition</span>
+                                    <span class="text-[10px] text-slate-700 font-bold line-clamp-1">${member.source}</span>
+                                </div>
+                                
+                                ${hasLinkedin ? `
+                                <a href="${member.linkedin}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[9px] rounded-lg transition duration-200 shadow-sm shrink-0">
+                                    <i data-lucide="linkedin" class="w-3 h-3"></i> Sync Profile
+                                </a>` : `
+                                <span class="text-[9px] text-slate-300 italic font-bold shrink-0">No Network Link</span>`}
+                            </div>
+
+                        </div>
+
+                    </div>
+                `;
+                grid.appendChild(cardWrapper);
+            });
+
+            // Initialize icons on dynamically injected cards
+            lucide.createIcons();
+        }
+
+        // --- Premium 3D Perspective Visiting Card Interaction Handlers ---
+        function handleCardTilt(event, cardIndex) {
+            const card = document.getElementById(`visitingCard-${cardIndex}`);
+            if (!card) return;
+
+            // Get absolute cursor coordinates relative to visiting card boundaries
+            const box = card.getBoundingClientRect();
+            const x = event.clientX - box.left - (box.width / 2);
+            const y = event.clientY - box.top - (box.height / 2);
+            
+            // Calculate dynamic degree shift (maximum 15deg axis tilt)
+            const rotX = -(y / (box.height / 2)) * 15;
+            const rotY = (x / (box.width / 2)) * 15;
+            
+            // Apply 3D perspective rotation style matrix
+            card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.04)`;
+            card.style.boxShadow = `
+                ${-rotY * 1.5}px ${rotX * 1.5}px 30px rgba(0, 0, 0, 0.12),
+                0 15px 35px -5px rgba(37, 99, 235, 0.08)
+            `;
+        }
+
+        function resetCardTilt(cardIndex) {
+            const card = document.getElementById(`visitingCard-${cardIndex}`);
+            if (!card) return;
+
+            // Softly reset transformation properties
+            card.style.transform = `rotateX(0deg) rotateY(0deg) scale(1)`;
+            card.style.boxShadow = `0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)`;
+        }
+
+        // Overlay Modal controls
+        function openSyncModal() { document.getElementById('syncModal').classList.remove('hidden'); }
+        function closeSyncModal() { document.getElementById('syncModal').classList.add('hidden'); }
+
+        function saveAndSyncData() {
+            const url = document.getElementById('sheetsCsvUrlInput').value.trim();
+            if (!url || !url.toLowerCase().startsWith("http")) { alert("Please enter a valid published spreadsheet CSV link."); return; }
+            localStorage.setItem('google_sheet_csv_sync_endpoint', url);
+            fetchCustomSheetData(url);
+            closeSyncModal();
+        }
+
+        function resetToFallback() {
+            localStorage.removeItem('google_sheet_csv_sync_endpoint');
+            document.getElementById('sheetsCsvUrlInput').value = defaultLiveSyncURL;
+            fetchCustomSheetData(defaultLiveSyncURL);
+            closeSyncModal();
+        }
+    </script>
+</body>
+</html>
